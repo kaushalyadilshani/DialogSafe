@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import json
 import logging
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional, Sequence
+from typing import List, Optional, Sequence, Tuple
 
 from .config import AppConfig, Mode
 from .profanity_detector import ProfanitySpan
@@ -54,7 +55,7 @@ def build_bleep_filter(spans: Sequence[ProfanitySpan], sample_rate: int = 16000)
     This implementation uses a 1kHz sine tone generated via aevalsrc and
     delayed/mixed over the original audio:
 
-        [0:a]anull[a0];
+        [0:a:0]anull[a0];
         aevalsrc=... [t0];[t0]adelay=... [b0];
         [a0][b0]amix=inputs=2[aout]
 
@@ -66,7 +67,7 @@ def build_bleep_filter(spans: Sequence[ProfanitySpan], sample_rate: int = 16000)
     chains: List[str] = []
 
     # Base audio
-    chains.append("[0:a]anull[a0]")
+    chains.append("[0:a:0]anull[a0]")
 
     beep_labels: List[str] = []
 
@@ -98,6 +99,170 @@ def build_bleep_filter(spans: Sequence[ProfanitySpan], sample_rate: int = 16000)
     return ";".join(chains)
 
 
+def probe_primary_audio_codec_and_bitrate(input_video: Path) -> Tuple[Optional[str], Optional[int]]:
+    """Return (codec_name, bit_rate) for the primary input audio stream (0:a:0).
+
+    - codec_name is a lowercase ffprobe codec name (e.g. aac, ac3, eac3)
+    - bit_rate is in bits/second when available.
+
+    This helper is best-effort: it returns (None, None) on ffprobe failures.
+    """
+
+    input_video = input_video.expanduser().resolve()
+    cmd = [
+        "ffprobe",
+        "-v",
+        "error",
+        "-select_streams",
+        "a:0",
+        "-show_entries",
+        "stream=codec_name,bit_rate",
+        "-of",
+        "json",
+        str(input_video),
+    ]
+
+    result = subprocess.run(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+
+    if result.returncode != 0:
+        logger.warning("ffprobe failed (code=%s): %s", result.returncode, result.stderr)
+        return None, None
+
+    try:
+        data = json.loads(result.stdout or "{}")
+    except json.JSONDecodeError:
+        logger.warning("ffprobe returned non-JSON output")
+        return None, None
+
+    streams = data.get("streams") or []
+    if not streams:
+        return None, None
+
+    stream0 = streams[0] or {}
+    codec_name_raw = stream0.get("codec_name")
+    codec_name = str(codec_name_raw).strip().lower() if codec_name_raw else None
+
+    bit_rate_raw = stream0.get("bit_rate")
+    bit_rate: Optional[int]
+    if bit_rate_raw is None:
+        bit_rate = None
+    else:
+        try:
+            bit_rate = int(str(bit_rate_raw).strip())
+        except ValueError:
+            bit_rate = None
+
+    return codec_name, bit_rate
+
+
+def _encoder_for_codec_name(codec_name: Optional[str]) -> str:
+    """Return an ffmpeg audio encoder name for a given ffprobe codec name."""
+
+    codec = (codec_name or "").strip().lower()
+    mapping = {
+        "aac": "aac",
+        "ac3": "ac3",
+        "eac3": "eac3",
+    }
+
+    encoder = mapping.get(codec)
+    if encoder:
+        return encoder
+
+    if codec:
+        logger.warning("Unsupported input audio codec %r; falling back to AAC", codec)
+    return "aac"
+
+
+def _build_ffmpeg_censor_and_mux_cmd(
+    *,
+    input_video: Path,
+    output_video: Path,
+    spans: Sequence[ProfanitySpan],
+    config: AppConfig,
+    primary_audio_codec: Optional[str],
+    primary_audio_bit_rate: Optional[int],
+) -> List[str]:
+    """Build the ffmpeg command used by apply_audio_filters_and_mux()."""
+
+    input_video = input_video.expanduser().resolve()
+    output_video = output_video.expanduser().resolve()
+
+    if not spans:
+        return [
+            "ffmpeg",
+            "-y",
+            "-i",
+            str(input_video),
+            "-c",
+            "copy",
+            str(output_video),
+        ]
+
+    if config.mode == "mute":
+        af = build_mute_filter(spans)
+        if not af:
+            return [
+                "ffmpeg",
+                "-y",
+                "-i",
+                str(input_video),
+                "-c",
+                "copy",
+                str(output_video),
+            ]
+        filter_complex = f"[0:a:0]{af}[aout]"
+    else:
+        fc = build_bleep_filter(spans)
+        if not fc:
+            return [
+                "ffmpeg",
+                "-y",
+                "-i",
+                str(input_video),
+                "-c",
+                "copy",
+                str(output_video),
+            ]
+        filter_complex = fc
+
+    encoder = _encoder_for_codec_name(primary_audio_codec)
+
+    cmd: List[str] = [
+        "ffmpeg",
+        "-y",
+        "-i",
+        str(input_video),
+        "-filter_complex",
+        filter_complex,
+        "-map",
+        "0:v:0",
+        "-map",
+        "[aout]",
+        "-map",
+        "0:a",
+        "-map",
+        "-0:a:0",
+        "-c:v",
+        "copy",
+        "-c:a",
+        "copy",
+        "-c:a:0",
+        encoder,
+    ]
+
+    if primary_audio_bit_rate and primary_audio_bit_rate > 0:
+        cmd.extend(["-b:a:0", str(primary_audio_bit_rate)])
+
+    cmd.append(str(output_video))
+    return cmd
+
+
 def apply_audio_filters_and_mux(
     input_video: Path,
     output_video: Path,
@@ -113,76 +278,20 @@ def apply_audio_filters_and_mux(
     input_video = input_video.expanduser().resolve()
     output_video = output_video.expanduser().resolve()
 
-    if not spans:
-        # No profanity: copy streams as-is for speed.
-        cmd = [
-            "ffmpeg",
-            "-y",
-            "-i",
-            str(input_video),
-            "-c",
-            "copy",
-            str(output_video),
-        ]
+    codec_name: Optional[str]
+    bit_rate: Optional[int]
+    if spans:
+        codec_name, bit_rate = probe_primary_audio_codec_and_bitrate(input_video)
     else:
-        if config.mode == "mute":
-            af = build_mute_filter(spans)
-            if not af:
-                # Fallback: copy if filter failed to build.
-                cmd = [
-                    "ffmpeg",
-                    "-y",
-                    "-i",
-                    str(input_video),
-                    "-c",
-                    "copy",
-                    str(output_video),
-                ]
-            else:
-                cmd = [
-                    "ffmpeg",
-                    "-y",
-                    "-i",
-                    str(input_video),
-                    "-af",
-                    af,
-                    "-c:v",
-                    "copy",
-                    "-c:a",
-                    "aac",
-                    str(output_video),
-                ]
-        else:
-            # Bleep mode
-            fc = build_bleep_filter(spans)
-            if not fc:
-                cmd = [
-                    "ffmpeg",
-                    "-y",
-                    "-i",
-                    str(input_video),
-                    "-c",
-                    "copy",
-                    str(output_video),
-                ]
-            else:
-                cmd = [
-                    "ffmpeg",
-                    "-y",
-                    "-i",
-                    str(input_video),
-                    "-filter_complex",
-                    fc,
-                    "-map",
-                    "0:v",
-                    "-map",
-                    "[aout]",
-                    "-c:v",
-                    "copy",
-                    "-c:a",
-                    "aac",
-                    str(output_video),
-                ]
+        codec_name, bit_rate = None, None
+    cmd = _build_ffmpeg_censor_and_mux_cmd(
+        input_video=input_video,
+        output_video=output_video,
+        spans=spans,
+        config=config,
+        primary_audio_codec=codec_name,
+        primary_audio_bit_rate=bit_rate,
+    )
 
     logger.info("Running ffmpeg for final mux: %s", " ".join(cmd))
     result = subprocess.run(
