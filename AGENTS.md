@@ -218,6 +218,15 @@ Important behavior: in mute mode, low-confidence matched profanity tokens are re
 Muxing strategy when spans exist:
 
 - Only the primary audio stream `0:a:0` is re-encoded; video is stream-copied and other audio tracks are preserved (see [`src/video_tools.py:_build_ffmpeg_censor_and_mux_cmd()`](src/video_tools.py:182) and [`tests/test_video_tools.py`](tests/test_video_tools.py:39)).
+- The filtered audio output `[aout]` is appended as a *new* audio stream tagged `title=Clean` (see [`src/video_tools.py:_build_ffmpeg_censor_and_mux_cmd()`](src/video_tools.py:182)).
+  - MKV outputs preserve all input streams (subtitles/attachments/chapters) via `-map 0` and then append the new clean track via `-map [aout]`.
+  - Non-MKV outputs use a safer default mapping: `-map 0:v:0 -map 0:a -map [aout]`.
+  - The appended clean track is always the last audio stream index (`-c copy` for existing streams, and a dedicated `-c:a:{clean_idx}` encoder just for the appended track).
+
+Clean-track marker behavior:
+
+- By default, inputs are skipped if they already contain an audio stream with `title=Clean` (to avoid accumulating multiple clean tracks) as detected by [`src/video_tools.py:input_has_clean_track_marker()`](src/video_tools.py:234).
+- Override this safety check with `--force` (see [`src/main.py:parse_args()`](src/main.py:29)).
 
 ## Testing
 
@@ -297,6 +306,35 @@ OpenAI API specifics:
 Local Whisper specifics:
 
 - The backend intentionally serializes `model.transcribe` per model name to avoid thread-safety issues (see [`src/transcription_backends/local_whisper.py`](src/transcription_backends/local_whisper.py:16) and [`tests/test_local_whisper_concurrency.py`](tests/test_local_whisper_concurrency.py:1)).
+
+### Radarr integration (On Download)
+
+Goal: run the CLI automatically on newly imported movie files, then atomically replace the original file in-place.
+
+High-level recipe:
+
+1) In Radarr: Settings → Connect → + → Custom Script.
+2) Trigger: On Download.
+3) Script: point to a bash script.
+4) In the script arguments, pass the movie file path (for example, Radarr supports token replacement like `{MovieFile.Path}`).
+
+Repo contains a ready-to-use script: [`scripts/radarr_profanity_remover_postimport.sh`](scripts/radarr_profanity_remover_postimport.sh:1).
+
+Example script (atomic replace via temp + rename):
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+
+in_path="$1"
+tmp_path="${in_path}.clean.$$"
+
+# Run without --force to make the hook idempotent (inputs with a Clean marker will be skipped).
+python -m src.main --input "$in_path" --output "$tmp_path" --mode mute
+
+# Atomic within the same filesystem.
+mv -f "$tmp_path" "$in_path"
+```
 
 ### Performance and concurrency notes
 
